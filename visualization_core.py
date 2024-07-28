@@ -103,7 +103,7 @@ def plot_convex_hull(ax, points, all, view=[30, 45, 15]):
     # Plotting the points that are not inside the convex hull
     for point in all.to_numpy()[:, :3]:
         ax.scatter(
-            point[0], point[1], point[2], color="cornflowerblue", marker=".", alpha=0.1
+            point[0], point[1], point[2], color="cornflowerblue", marker=".", alpha=0.25
         )
 
     # Setting labels
