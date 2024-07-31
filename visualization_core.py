@@ -10,7 +10,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial import ConvexHull, Delaunay
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
-
+# to split dataset into parts based on tolerance value
 def split_dataframe_by_tolerance(df, column_name, tolerance, min_points=4):
     # Sort the dataframe based on the column
     df_sorted = df.sort_values(by=column_name).reset_index(drop=True)
@@ -54,16 +54,12 @@ def plot_convex_hull(ax, points, all, view=[30, 45, 15]):
     points = points.to_numpy()[:, :3]
     # Compute the convex hull and use delaunay triangulation to see if points are inside or outside hull
     hull = ConvexHull(points)
-    # this is now redundant since we plot all the points in each instance
-    # hull_delaunay = Delaunay(points[hull.vertices])
 
     # Camera position
     #   This value is just set to represent the camera position that is the default for 3D plots
     #   it would need to be changed manually if you alter the plot rendering angle.
     camera_position = np.array([1, 0, 1])
 
-    # max_distance = distance_from_camera(np.array([0, 0, 0]))
-    # max_distance = distance_from_camera(points, camera_position)
     distances = np.array(
         [distance_from_camera(point, camera_position) for point in points]
     )
@@ -80,10 +76,6 @@ def plot_convex_hull(ax, points, all, view=[30, 45, 15]):
 
         # Calculate centroid of the facet
         centroid = np.mean(points[simplex], axis=0)
-
-        # Old code : replace when processing large # of points
-        # color_intensity = distance_from_camera(centroid, camera_position) / max_distance
-        # poly.set_facecolor((0, 0, 1-color_intensity, 0.5))
 
         # Calculate the distance of the centroid from the camera
         distance = distance_from_camera(centroid, camera_position)
@@ -103,7 +95,13 @@ def plot_convex_hull(ax, points, all, view=[30, 45, 15]):
     # Plotting the points that are not inside the convex hull
     for point in all.to_numpy()[:, :3]:
         ax.scatter(
-            point[0], point[1], point[2], color="cornflowerblue", marker=".", alpha=0.25
+            point[0],
+            point[1],
+            point[2],
+            color="cornflowerblue",
+            marker=".",
+            sizes=[0.075],
+            alpha=0.2,
         )
 
     # Setting labels
@@ -125,35 +123,26 @@ def convex_hull_progression(
     index, l = 0, len(parts)
     columns = math.ceil(l / rows)
 
+    # to store points for each convex hull
+    current_points = pd.DataFrame([])
+
     if l <= 3:
         # creating figure according to given specifications
         fig, axs = plt.subplots(
             1, l, figsize=fig_size, subplot_kw=dict(projection="3d")
         )
 
-        current_points = parts[0]
-        # We need a minimum of 4 points to construct a convex hull
-        if current_points.shape[0] < 4:
-            current_points = pd.concat([parts[index], current_points])
-            index += 1
-
         # add convex hull for each part to the figure
-        for i in range(l):
-            print(f"Plotting part {index + 1}/{l}")
+        while index < l:
+            print(f"Plotting part {index+1}/{l}")
             current_points = pd.concat([parts[index], current_points])
-            plot_convex_hull(axs[i], current_points, df, view)
+            plot_convex_hull(axs[index], current_points, df, view)
             index += 1
     else:
         # creating figure according to given specifications
         fig, axs = plt.subplots(
             rows, columns, figsize=fig_size, subplot_kw=dict(projection="3d")
         )
-
-        current_points = parts[0]
-        # We need a minimum of 4 points to construct a convex hull
-        if current_points.shape[0] < 4:
-            current_points = pd.concat([parts[index], current_points])
-            index += 1
 
         # add convex hull for each part to the figure
         for i in range(rows):
